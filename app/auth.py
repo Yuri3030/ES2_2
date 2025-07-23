@@ -7,6 +7,8 @@ from jose import JWTError, jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import APIKeyHeader
 from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordBearer
+
 
 # Importa o modelo de usuário e a função de obter o banco de dados
 from app.database import get_db
@@ -47,7 +49,8 @@ def decode_access_token(token: str) -> dict | None:
 
 # Endpoint de login que fornece o token
 # Vai buscar o token diretamente no header Authorization
-oauth2_scheme = APIKeyHeader(name="Authorization")
+# Agora o Swagger sabe que para autenticar deve usar /token
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Função para obter o usuário atual a partir do token
 # Esta função é usada como dependência nas rotas que precisam de autenticação

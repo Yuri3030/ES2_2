@@ -6,3 +6,4 @@ passlib[bcrypt]
 email-validator
 alembic
 python-jose[cryptography]
+python-multipart

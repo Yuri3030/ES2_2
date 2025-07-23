@@ -14,7 +14,8 @@ services:
       POSTGRES_DB: appdb
       POSTGRES_HOST: db
     depends_on:
-      - db
+      db:
+        condition: service_healthy  # Só inicia depois que o db estiver saudável
 
   db:
     image: postgres:15
@@ -27,6 +28,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck: #  garante que só fica "healthy" depois de pronto
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5   
 
   pgadmin:
     image: dpage/pgadmin4

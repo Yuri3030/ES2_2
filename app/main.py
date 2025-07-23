@@ -14,6 +14,8 @@ from datetime import timedelta
 from app.auth import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 # Importa a função para obter o usuário atual
 from app.auth import get_current_user
+# para conseguir o autorization automático no sweagger
+from fastapi.security import OAuth2PasswordRequestForm
 
 
 # Cria as tabelas automaticamente
@@ -92,3 +94,23 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         message="Login realizado com sucesso!",
         token=access_token
     )
+
+@app.post("/token")
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    #  Buscar usuário
+    user = db.query(User).filter(User.email == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="E-mail ou senha inválidos")
+
+    #  Gerar JWT
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.email},
+        expires_delta=access_token_expires
+    )
+
+    #  Formato padrão OAuth2
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
