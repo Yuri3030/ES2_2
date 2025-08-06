@@ -71,8 +71,12 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
 # Rota para listar usuários
 @app.get("/users/", response_model=list[UserResponse])
-def list_users(db: Session = Depends(get_db)):
+def list_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     return db.query(models.User).all()
+
 
 
 # Rota de login

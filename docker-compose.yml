@@ -13,6 +13,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: appdb
       POSTGRES_HOST: db
+      PYTHONPATH: /app
     depends_on:
       db:
         condition: service_healthy  # Só inicia depois que o db estiver saudável
