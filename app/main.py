@@ -16,7 +16,11 @@ from app.auth import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.auth import get_current_user
 # para conseguir o autorization automático no sweagger
 from fastapi.security import OAuth2PasswordRequestForm
-
+# para a criação do administrador padrão
+from app.database import SessionLocal
+from app.models import User 
+# para receber o email no corpo da requisição
+from fastapi import Body
 
 # Cria as tabelas automaticamente
 Base.metadata.create_all(bind=engine)
@@ -72,10 +76,32 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 # Rota para listar usuários
 @app.get("/users/", response_model=list[UserResponse])
 def list_users(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.email != "admin@example.com":
+        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador.")
+    
+    return db.query(models.User).all()
+
+# Rota para deletar usuário pelo email
+@app.delete("/users/")
+def delete_user(
+    email: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return db.query(models.User).all()
+    if current_user.email != "admin@example.com":
+        raise HTTPException(status_code=403, detail="Apenas o administrador pode deletar usuários")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    db.delete(user)
+    db.commit()
+    return {"message": f"Usuário {email} deletado com sucesso"}
+
 
 
 
@@ -118,3 +144,22 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         "access_token": access_token,
         "token_type": "bearer"
     }
+# cria um usuário administrador padrão se não existir
+
+def create_default_admin():
+    db: Session = SessionLocal()
+    admin_email = "admin@example.com"
+    admin_password = "admin"
+
+    if not db.query(User).filter(User.email == admin_email).first():
+        new_admin = User(
+            name="Administrador",
+            email=admin_email,
+            password_hash=hash_password(admin_password),
+            is_active=True
+        )
+        db.add(new_admin)
+        db.commit()
+    db.close()
+
+create_default_admin()
