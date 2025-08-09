@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from datetime import datetime
 from app.database import Base  # ✅ Base vem daqui
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, CheckConstraint, func
+from sqlalchemy.orm import relationship, backref
 
 
 # app/models.py# Importa a Base do arquivo database.py para definir os modelos
@@ -14,3 +16,21 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+class Mood(Base):
+    __tablename__ = "moods"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    score = Column(Integer, nullable=False)
+    comment = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("score >= 1 AND score <= 5", name="ck_moods_score_range"),
+    )
+
+    user = relationship(
+        "User",
+        backref=backref("moods", cascade="all, delete-orphan")
+    )

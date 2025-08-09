@@ -11,9 +11,8 @@ from app.schemas import UserCreate, UserResponse
 from app.schemas import LoginRequest, LoginResponse
 # Importa a função de criação de token
 from datetime import timedelta
-from app.auth import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-# Importa a função para obter o usuário atual
-from app.auth import get_current_user
+from app.auth import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
+
 # para conseguir o autorization automático no sweagger
 from fastapi.security import OAuth2PasswordRequestForm
 # para a criação do administrador padrão
