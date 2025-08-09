@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from pydantic import BaseModel, conint
 from datetime import datetime
+from enum import Enum
 
 # Modelo para entrada de cadastro
 class UserCreate(BaseModel):
@@ -28,15 +29,25 @@ class LoginResponse(BaseModel):
     message: str
     token: str | None = None  
 
+# Modelos para Mood
+class MoodType(str, Enum):
+    alegria = "alegria"
+    tristeza = "tristeza"
+    angustia = "angustia"
+    magoa = "mágoa"
+    ansiedade = "ansiedade"
 
 class MoodCreate(BaseModel):
-    score: conint(ge=1, le=5)
-    comment: str | None = None
+    score: int = Field(..., ge=1, le=5)
+    mood_type: MoodType  # <-- escolha obrigatória
+    comment: Optional[str] = None
 
 class MoodResponse(BaseModel):
     id: int
     score: int
-    comment: str | None
+    mood_type: MoodType
+    comment: Optional[str]
     created_at: datetime
 
-    model_config = {"from_attributes": True}
+    class Config:
+        from_attributes = True

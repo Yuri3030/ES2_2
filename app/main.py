@@ -17,10 +17,12 @@ from app.auth import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_curre
 from fastapi.security import OAuth2PasswordRequestForm
 # para a criação do administrador padrão
 from app.database import SessionLocal
-from app.models import User 
+from app.models import User, Mood
+
 # para receber o email no corpo da requisição
 from fastapi import Body
 
+from app.schemas import MoodCreate, MoodResponse
 # Cria as tabelas automaticamente
 Base.metadata.create_all(bind=engine)
 
@@ -162,3 +164,42 @@ def create_default_admin():
     db.close()
 
 create_default_admin()
+
+
+# Criar registro de humor (do usuário logado)
+@app.post("/moods", response_model=MoodResponse)
+def create_mood(payload: MoodCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    entry = Mood(
+        user_id=current_user.id,
+        score=payload.score,
+        mood_type=payload.mood_type,
+        comment=payload.comment
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+# Listar meus registros de humor
+@app.get("/moods", response_model=list[MoodResponse])
+def list_my_moods(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return db.query(Mood).filter(Mood.user_id == current_user.id).order_by(Mood.created_at.desc()).all()
+
+# (Opcional) Admin lista humores de um usuário específico por e-mail
+@app.get("/users/{email}/moods", response_model=list[MoodResponse])
+def list_user_moods_as_admin(
+    email: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.email != "admin@example.com":
+        raise HTTPException(status_code=403, detail="Apenas o administrador pode acessar os registros de outros usuários.")
+
+    target = db.query(User).filter(User.email == email).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    return db.query(Mood).filter(Mood.user_id == target.id).order_by(Mood.created_at.desc()).all()

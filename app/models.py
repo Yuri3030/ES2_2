@@ -3,6 +3,8 @@ from datetime import datetime
 from app.database import Base  # ✅ Base vem daqui
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, CheckConstraint, func
 from sqlalchemy.orm import relationship, backref
+import enum
+from sqlalchemy import Enum as SqlEnum
 
 
 # app/models.py# Importa a Base do arquivo database.py para definir os modelos
@@ -16,13 +18,22 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
+
+class MoodType(str, enum.Enum):
+    alegria = "alegria"
+    tristeza = "tristeza"
+    angustia = "angustia"
+    magoa = "mágoa"
+    ansiedade = "ansiedade"
+
 class Mood(Base):
     __tablename__ = "moods"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     score = Column(Integer, nullable=False)
+    mood_type = Column(SqlEnum(MoodType), nullable=False)  # <-- novo campo
     comment = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
